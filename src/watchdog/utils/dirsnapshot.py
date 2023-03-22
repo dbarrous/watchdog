@@ -51,222 +51,102 @@ from __future__ import annotations
 import errno
 import os
 from stat import S_ISDIR
+import sqlite3
 
 
 class DirectorySnapshotDiff:
-    """
-    Compares two directory snapshots and creates an object that represents
-    the difference between the two snapshots.
 
-    :param ref:
-        The reference directory snapshot.
-    :type ref:
-        :class:`DirectorySnapshot`
-    :param snapshot:
-        The directory snapshot which will be compared
-        with the reference snapshot.
-    :type snapshot:
-        :class:`DirectorySnapshot`
-    :param ignore_device:
-        A boolean indicating whether to ignore the device id or not.
-        By default, a file may be uniquely identified by a combination of its first
-        inode and its device id. The problem is that the device id may (or may not)
-        change between system boots. This problem would cause the DirectorySnapshotDiff
-        to think a file has been deleted and created again but it would be the
-        exact same file.
-        Set to True only if you are sure you will always use the same device.
-    :type ignore_device:
-        :class:`bool`
-    """
+    def __init__(self, previous_dirsnap, current_dirsnap):
+        self.previous_dirsnap = previous_dirsnap
+        self.current_dirsnap = current_dirsnap
+        self.added, self.removed, self.modified = self.compute_diff()
+    
+    def compute_diff(self):
+        previous_paths = self.previous_dirsnap.paths
+        current_paths = self.current_dirsnap.paths
 
-    def __init__(self, ref, snapshot, ignore_device=False):
-        created = snapshot.paths - ref.paths
-        deleted = ref.paths - snapshot.paths
+        added = current_paths - previous_paths
+        removed = previous_paths - current_paths
 
-        if ignore_device:
-
-            def get_inode(directory, full_path):
-                return directory.inode(full_path)[0]
-
-        else:
-
-            def get_inode(directory, full_path):
-                return directory.inode(full_path)
-
-        # check that all unchanged paths have the same inode
-        for path in ref.paths & snapshot.paths:
-            if get_inode(ref, path) != get_inode(snapshot, path):
-                created.add(path)
-                deleted.add(path)
-
-        # find moved paths
-        moved = set()
-        for path in set(deleted):
-            inode = ref.inode(path)
-            new_path = snapshot.path(inode)
-            if new_path:
-                # file is not deleted but moved
-                deleted.remove(path)
-                moved.add((path, new_path))
-
-        for path in set(created):
-            inode = snapshot.inode(path)
-            old_path = ref.path(inode)
-            if old_path:
-                created.remove(path)
-                moved.add((old_path, path))
-
-        # find modified paths
-        # first check paths that have not moved
         modified = set()
-        for path in ref.paths & snapshot.paths:
-            if get_inode(ref, path) == get_inode(snapshot, path):
-                if ref.mtime(path) != snapshot.mtime(path) or ref.size(
-                    path
-                ) != snapshot.size(path):
+        for path in previous_paths.intersection(current_paths):
+            prev_inode, prev_device = self.previous_dirsnap.inode(path)
+            cur_inode, cur_device = self.current_dirsnap.inode(path)
+
+            if prev_inode != cur_inode or prev_device != cur_device:
+                modified.add(path)
+            else:
+                prev_mtime = self.previous_dirsnap.mtime(path)
+                cur_mtime = self.current_dirsnap.mtime(path)
+                if prev_mtime != cur_mtime:
                     modified.add(path)
 
-        for old_path, new_path in moved:
-            if ref.mtime(old_path) != snapshot.mtime(new_path) or ref.size(
-                old_path
-            ) != snapshot.size(new_path):
-                modified.add(old_path)
+        return added, removed, modified
 
-        self._dirs_created = [path for path in created if snapshot.isdir(path)]
-        self._dirs_deleted = [path for path in deleted if ref.isdir(path)]
-        self._dirs_modified = [path for path in modified if ref.isdir(path)]
-        self._dirs_moved = [(frm, to) for (frm, to) in moved if ref.isdir(frm)]
-
-        self._files_created = list(created - set(self._dirs_created))
-        self._files_deleted = list(deleted - set(self._dirs_deleted))
-        self._files_modified = list(modified - set(self._dirs_modified))
-        self._files_moved = list(moved - set(self._dirs_moved))
+    def __repr__(self):
+        return f"<{type(self).__name__} added={len(self.added)} removed={len(self.removed)} modified={len(self.modified)}>"
 
     def __str__(self):
         return self.__repr__()
 
-    def __repr__(self):
-        fmt = (
-            "<{0} files(created={1}, deleted={2}, modified={3}, moved={4}),"
-            " folders(created={5}, deleted={6}, modified={7}, moved={8})>"
-        )
-        return fmt.format(
-            type(self).__name__,
-            len(self._files_created),
-            len(self._files_deleted),
-            len(self._files_modified),
-            len(self._files_moved),
-            len(self._dirs_created),
-            len(self._dirs_deleted),
-            len(self._dirs_modified),
-            len(self._dirs_moved),
-        )
+    def __getitem__(self, item):
+        if item == "added":
+            return self.added
+        elif item == "removed":
+            return self.removed
+        elif item == "modified":
+            return self.modified
+        else:
+            raise KeyError(f"Invalid key: {item}")
 
-    @property
-    def files_created(self):
-        """List of files that were created."""
-        return self._files_created
-
-    @property
-    def files_deleted(self):
-        """List of files that were deleted."""
-        return self._files_deleted
-
-    @property
-    def files_modified(self):
-        """List of files that were modified."""
-        return self._files_modified
-
-    @property
-    def files_moved(self):
-        """
-        List of files that were moved.
-
-        Each event is a two-tuple the first item of which is the path
-        that has been renamed to the second item in the tuple.
-        """
-        return self._files_moved
-
-    @property
-    def dirs_modified(self):
-        """
-        List of directories that were modified.
-        """
-        return self._dirs_modified
-
-    @property
-    def dirs_moved(self):
-        """
-        List of directories that were moved.
-
-        Each event is a two-tuple the first item of which is the path
-        that has been renamed to the second item in the tuple.
-        """
-        return self._dirs_moved
-
-    @property
-    def dirs_deleted(self):
-        """
-        List of directories that were deleted.
-        """
-        return self._dirs_deleted
-
-    @property
-    def dirs_created(self):
-        """
-        List of directories that were created.
-        """
-        return self._dirs_created
-
+    def __iter__(self):
+        yield "added", self.added
+        yield "removed", self.removed
+        yield "modified", self.modified
 
 class DirectorySnapshot:
-    """
-    A snapshot of stat information of files in a directory.
-
-    :param path:
-        The directory path for which a snapshot should be taken.
-    :type path:
-        ``str``
-    :param recursive:
-        ``True`` if the entire directory tree should be included in the
-        snapshot; ``False`` otherwise.
-    :type recursive:
-        ``bool``
-    :param stat:
-        Use custom stat function that returns a stat structure for path.
-        Currently only st_dev, st_ino, st_mode and st_mtime are needed.
-
-        A function taking a ``path`` as argument which will be called
-        for every entry in the directory tree.
-    :param listdir:
-        Use custom listdir function. For details see ``os.scandir``.
-    """
-
-    def __init__(self, path, recursive=True, stat=os.stat, listdir=os.scandir):
+    def __init__(self, path, db_path, recursive=True, stat=os.stat, listdir=os.scandir):
         self.recursive = recursive
         self.stat = stat
         self.listdir = listdir
 
-        self._stat_info = {}
-        self._inode_to_path = {}
+        self.db_path = db_path
 
-        st = self.stat(path)
-        self._stat_info[path] = st
-        self._inode_to_path[(st.st_ino, st.st_dev)] = path
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS snapshot
+                (path TEXT PRIMARY KEY, inode INTEGER, device INTEGER, is_dir INTEGER, mtime REAL, size INTEGER)
+                """
+            )
 
-        for p, st in self.walk(path):
-            i = (st.st_ino, st.st_dev)
-            self._inode_to_path[i] = p
-            self._stat_info[p] = st
+            st = self.stat(path)
+            self.add_entry_to_db(conn, path, st)
+
+            for p, st in self.walk(path):
+                self.add_entry_to_db(conn, p, st)
+
+    def add_entry_to_db(self, conn, path, st):
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO snapshot (path, inode, device, is_dir, mtime, size)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                path,
+                st.st_ino,
+                st.st_dev,
+                int(S_ISDIR(st.st_mode)),
+                st.st_mtime,
+                st.st_size,
+            ),
+        )
+        conn.commit()
 
     def walk(self, root):
         try:
             paths = [os.path.join(root, entry.name) for entry in self.listdir(root)]
         except OSError as e:
-            # Directory may have been deleted between finding it in the directory
-            # list of its parent and trying to delete its contents. If this
-            # happens we treat it as empty. Likewise if the directory was replaced
-            # with a file of the same name (less likely, but possible).
             if e.errno in (errno.ENOENT, errno.ENOTDIR, errno.EINVAL):
                 return
             else:
@@ -292,50 +172,52 @@ class DirectorySnapshot:
 
     @property
     def paths(self):
-        """
-        Set of file/directory paths in the snapshot.
-        """
-        return set(self._stat_info.keys())
+        with sqlite3.connect(self.db_path) as conn:
+            return {row[0] for row in conn.execute("SELECT path FROM snapshot")}
 
-    def path(self, id):
-        """
-        Returns path for id. None if id is unknown to this snapshot.
-        """
-        return self._inode_to_path.get(id)
+    def path(self, inode, device):
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                "SELECT path FROM snapshot WHERE inode = ? AND device = ?",
+                (inode, device),
+            ).fetchone()
+            return row[0] if row else None
 
     def inode(self, path):
-        """Returns an id for path."""
-        st = self._stat_info[path]
-        return (st.st_ino, st.st_dev)
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                "SELECT inode, device FROM snapshot WHERE path = ?", (path,)
+            ).fetchone()
+            return row if row else (None, None)
 
     def isdir(self, path):
-        return S_ISDIR(self._stat_info[path].st_mode)
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                "SELECT is_dir FROM snapshot WHERE path = ?", (path,)
+            ).fetchone()
+            return bool(row[0]) if row else False
 
     def mtime(self, path):
-        return self._stat_info[path].st_mtime
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                "SELECT mtime FROM snapshot WHERE path = ?", (path,)
+            ).fetchone()
+            return row[0] if row else None
 
     def size(self, path):
-        return self._stat_info[path].st_size
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+            "SELECT size FROM snapshot WHERE path = ?", (path,)
+            ).fetchone()
+            
+            return row[0] if row else None
 
-    def stat_info(self, path):
-        """
-        Returns a stat information object for the specified path from
-        the snapshot.
-
-        Attached information is subject to change. Do not use unless
-        you specify `stat` in constructor. Use :func:`inode`, :func:`mtime`,
-        :func:`isdir` instead.
-
-        :param path:
-            The path for which stat information should be obtained
-            from a snapshot.
-        """
-        return self._stat_info[path]
+    def delete_snapshot(self):
+        os.remove(self.db_path)
 
     def __sub__(self, previous_dirsnap):
         """Allow subtracting a DirectorySnapshot object instance from
         another.
-
         :returns:
             A :class:`DirectorySnapshotDiff` object.
         """
@@ -345,7 +227,9 @@ class DirectorySnapshot:
         return self.__repr__()
 
     def __repr__(self):
-        return str(self._stat_info)
+        with sqlite3.connect(self.db_path) as conn:
+            return f"<{type(self).__name__} db_path={self.db_path} entries={conn.execute('SELECT COUNT(*) FROM snapshot').fetchone()[0]}>"
+        
 
 
 class EmptyDirectorySnapshot:
