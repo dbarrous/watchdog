@@ -36,7 +36,8 @@ import os
 import threading
 from functools import partial
 
-from watchdog.utils.dirsnapshot import DirectorySnapshot, DirectorySnapshotDiff
+from watchdog.utils.dirsnapshot import DirectorySnapshotDiff
+from watchdog.utils.sqldirsnapshot import SqliteDirectorySnapshot as DirectorySnapshot
 from watchdog.observers.api import (
     EventEmitter,
     BaseObserver,
