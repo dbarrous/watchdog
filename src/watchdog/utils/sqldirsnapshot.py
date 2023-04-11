@@ -33,16 +33,23 @@ class SqliteDirectorySnapshot(DirectorySnapshot):
             self.insert_stat_info(p, st)
             yield p, st
 
-    def insert_stat_info(self, path, st):
-        c = self.conn.cursor()
-        c.execute(
-            """
-            INSERT INTO stat_info (path, st_ino, st_dev, st_mode, st_mtime, st_size)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (path, st.st_ino, st.st_dev, st.st_mode, st.st_mtime, st.st_size),
-        )
-        self.conn.commit()
+    def insert_stat_info(self, path, stat_result):
+        with self.conn:
+            c = self.conn.cursor()
+            c.execute(
+                """
+                INSERT OR REPLACE INTO stat_info(path, inode, device, mode, mtime, size)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    path,
+                    stat_result.st_ino,
+                    stat_result.st_dev,
+                    stat_result.st_mode,
+                    stat_result.st_mtime,
+                    stat_result.st_size,
+                ),
+            )
 
     @property
     def paths(self):
