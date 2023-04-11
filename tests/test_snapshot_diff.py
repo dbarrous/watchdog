@@ -21,7 +21,11 @@ import time
 from unittest.mock import patch
 
 from watchdog.utils import platform
-from watchdog.utils.dirsnapshot import DirectorySnapshot, DirectorySnapshotDiff, EmptyDirectorySnapshot
+from watchdog.utils.dirsnapshot import (
+    DirectorySnapshot,
+    DirectorySnapshotDiff,
+    EmptyDirectorySnapshot,
+)
 
 from .shell import mkdir, mv, rm, touch
 

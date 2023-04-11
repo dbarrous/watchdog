@@ -68,7 +68,12 @@ from watchdog.events import (
     FileMovedEvent,
     FileSystemEvent,
 )
-from watchdog.observers.api import DEFAULT_EMITTER_TIMEOUT, DEFAULT_OBSERVER_TIMEOUT, BaseObserver, EventEmitter
+from watchdog.observers.api import (
+    DEFAULT_EMITTER_TIMEOUT,
+    DEFAULT_OBSERVER_TIMEOUT,
+    BaseObserver,
+    EventEmitter,
+)
 
 logger = logging.getLogger(__name__)
 

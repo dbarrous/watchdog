@@ -55,12 +55,11 @@ import sqlite3
 
 
 class DirectorySnapshotDiff:
-
     def __init__(self, previous_dirsnap, current_dirsnap):
         self.previous_dirsnap = previous_dirsnap
         self.current_dirsnap = current_dirsnap
         self.added, self.removed, self.modified = self.compute_diff()
-    
+
     def compute_diff(self):
         previous_paths = self.previous_dirsnap.paths
         current_paths = self.current_dirsnap.paths
@@ -103,6 +102,7 @@ class DirectorySnapshotDiff:
         yield "added", self.added
         yield "removed", self.removed
         yield "modified", self.modified
+
 
 class DirectorySnapshot:
     def __init__(self, path, db_path, recursive=True, stat=os.stat, listdir=os.scandir):
@@ -207,9 +207,9 @@ class DirectorySnapshot:
     def size(self, path):
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
-            "SELECT size FROM snapshot WHERE path = ?", (path,)
+                "SELECT size FROM snapshot WHERE path = ?", (path,)
             ).fetchone()
-            
+
             return row[0] if row else None
 
     def delete_snapshot(self):
@@ -229,7 +229,6 @@ class DirectorySnapshot:
     def __repr__(self):
         with sqlite3.connect(self.db_path) as conn:
             return f"<{type(self).__name__} db_path={self.db_path} entries={conn.execute('SELECT COUNT(*) FROM snapshot').fetchone()[0]}>"
-        
 
 
 class EmptyDirectorySnapshot:

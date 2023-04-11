@@ -272,8 +272,12 @@ def tricks_from(args):
         from watchdog.observers.polling import PollingObserver as Observer
     elif args.debug_force_kqueue:
         from watchdog.observers.kqueue import KqueueObserver as Observer
-    elif (not TYPE_CHECKING and args.debug_force_winapi) or (TYPE_CHECKING and sys.platform.startswith("win")):
-        from watchdog.observers.read_directory_changes import WindowsApiObserver as Observer
+    elif (not TYPE_CHECKING and args.debug_force_winapi) or (
+        TYPE_CHECKING and sys.platform.startswith("win")
+    ):
+        from watchdog.observers.read_directory_changes import (
+            WindowsApiObserver as Observer,
+        )
     elif args.debug_force_inotify:
         from watchdog.observers.inotify import InotifyObserver as Observer
     elif args.debug_force_fsevents:
@@ -480,8 +484,12 @@ def log(args):
         from watchdog.observers.polling import PollingObserver as Observer
     elif args.debug_force_kqueue:
         from watchdog.observers.kqueue import KqueueObserver as Observer
-    elif (not TYPE_CHECKING and args.debug_force_winapi) or (TYPE_CHECKING and sys.platform.startswith("win")):
-        from watchdog.observers.read_directory_changes import WindowsApiObserver as Observer
+    elif (not TYPE_CHECKING and args.debug_force_winapi) or (
+        TYPE_CHECKING and sys.platform.startswith("win")
+    ):
+        from watchdog.observers.read_directory_changes import (
+            WindowsApiObserver as Observer,
+        )
     elif args.debug_force_inotify:
         from watchdog.observers.inotify import InotifyObserver as Observer
     elif args.debug_force_fsevents:

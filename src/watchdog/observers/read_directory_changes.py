@@ -34,11 +34,20 @@ from watchdog.events import (
     generate_sub_created_events,
     generate_sub_moved_events,
 )
-from watchdog.observers.api import DEFAULT_EMITTER_TIMEOUT, DEFAULT_OBSERVER_TIMEOUT, BaseObserver, EventEmitter
+from watchdog.observers.api import (
+    DEFAULT_EMITTER_TIMEOUT,
+    DEFAULT_OBSERVER_TIMEOUT,
+    BaseObserver,
+    EventEmitter,
+)
 
 assert sys.platform.startswith("win"), f"{__name__} requires Windows"
 
-from watchdog.observers.winapi import close_directory_handle, get_directory_handle, read_events  # noqa: E402
+from watchdog.observers.winapi import (
+    close_directory_handle,
+    get_directory_handle,
+    read_events,
+)  # noqa: E402
 
 # HACK:
 WATCHDOG_TRAVERSE_MOVED_DIR_DELAY = 1  # seconds

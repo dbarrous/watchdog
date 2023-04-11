@@ -36,7 +36,9 @@ def struct_inotify(wd, mask, cookie=0, length=0, name=b""):
     return struct.pack(struct_format, wd, mask, cookie, length, name)
 
 
-def test_late_double_deletion(helper: Helper, p: P, event_queue: TestEventQueue, start_watching: StartWatching) -> None:
+def test_late_double_deletion(
+    helper: Helper, p: P, event_queue: TestEventQueue, start_watching: StartWatching
+) -> None:
     inotify_fd = type("FD", (object,), {})()
     inotify_fd.last = 0
     inotify_fd.wds = []
@@ -131,7 +133,9 @@ def test_raise_error(error, patterns):
     assert any(pattern in str(exc.value) for pattern in patterns)
 
 
-def test_non_ascii_path(p: P, event_queue: TestEventQueue, start_watching: StartWatching) -> None:
+def test_non_ascii_path(
+    p: P, event_queue: TestEventQueue, start_watching: StartWatching
+) -> None:
     """
     Inotify can construct an event for a path containing non-ASCII.
     """
@@ -145,7 +149,9 @@ def test_non_ascii_path(p: P, event_queue: TestEventQueue, start_watching: Start
     assert repr(event)
 
 
-def test_watch_file(p: P, event_queue: TestEventQueue, start_watching: StartWatching) -> None:
+def test_watch_file(
+    p: P, event_queue: TestEventQueue, start_watching: StartWatching
+) -> None:
     path = p("this_is_a_file")
     with open(path, "a"):
         pass

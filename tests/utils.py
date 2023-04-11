@@ -70,7 +70,9 @@ class Helper:
                 self.event_queue, ObservedWatch(path, recursive=recursive)
             )
         else:
-            emitter = Emitter(self.event_queue, ObservedWatch(path, recursive=recursive))
+            emitter = Emitter(
+                self.event_queue, ObservedWatch(path, recursive=recursive)
+            )
 
         self.emitters.append(emitter)
 
@@ -78,6 +80,7 @@ class Helper:
             # TODO: I think this could be better...  .suppress_history should maybe
             #       become a common attribute.
             from watchdog.observers.fsevents import FSEventsEmitter
+
             assert isinstance(emitter, FSEventsEmitter)
             emitter.suppress_history = True
 

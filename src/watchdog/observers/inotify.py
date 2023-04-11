@@ -86,7 +86,12 @@ from watchdog.events import (
     generate_sub_created_events,
     generate_sub_moved_events,
 )
-from watchdog.observers.api import DEFAULT_EMITTER_TIMEOUT, DEFAULT_OBSERVER_TIMEOUT, BaseObserver, EventEmitter
+from watchdog.observers.api import (
+    DEFAULT_EMITTER_TIMEOUT,
+    DEFAULT_OBSERVER_TIMEOUT,
+    BaseObserver,
+    EventEmitter,
+)
 
 from .inotify_buffer import InotifyBuffer
 
@@ -127,11 +132,15 @@ class InotifyEmitter(EventEmitter):
         # If "full_events" is true, then the method will report unmatched move events as separate events
         # This behavior is by default only called by a InotifyFullEmitter
         if self._inotify is None:
-            logger.error("InotifyEmitter.queue_events() called when the thread is inactive")
+            logger.error(
+                "InotifyEmitter.queue_events() called when the thread is inactive"
+            )
             return
         with self._lock:
             if self._inotify is None:
-                logger.error("InotifyEmitter.queue_events() called when the thread is inactive")
+                logger.error(
+                    "InotifyEmitter.queue_events() called when the thread is inactive"
+                )
                 return
             event = self._inotify.read_event()
             if event is None:

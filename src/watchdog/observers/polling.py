@@ -48,8 +48,14 @@ from watchdog.events import (
     FileModifiedEvent,
     FileMovedEvent,
 )
-from watchdog.observers.api import DEFAULT_EMITTER_TIMEOUT, DEFAULT_OBSERVER_TIMEOUT, BaseObserver, EventEmitter
-from watchdog.utils.dirsnapshot import DirectorySnapshot, DirectorySnapshotDiff
+from watchdog.observers.api import (
+    DEFAULT_EMITTER_TIMEOUT,
+    DEFAULT_OBSERVER_TIMEOUT,
+    BaseObserver,
+    EventEmitter,
+)
+from watchdog.utils.sqldirsnapshot import Sqlite3DirectorySnapshot as DirectorySnapshot
+from watchdog.utils.dirsnapshot import DirectorySnapshotDiff
 
 
 class PollingEmitter(EventEmitter):
