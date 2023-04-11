@@ -1,3 +1,5 @@
+# coding: utf-8
+#
 # Copyright 2011 Yesudeep Mangalapilly <yesudeep@gmail.com>
 # Copyright 2012 Google, Inc & contributors.
 #
@@ -19,43 +21,39 @@
 :synopsis: Polling emitter implementation.
 :author: yesudeep@google.com (Yesudeep Mangalapilly)
 :author: contact@tiger-222.fr (Mickaël Schoentgen)
-
 Classes
 -------
 .. autoclass:: PollingObserver
    :members:
    :show-inheritance:
-
 .. autoclass:: PollingObserverVFS
    :members:
    :show-inheritance:
    :special-members:
 """
 
-from __future__ import annotations
-
 import os
 import threading
 from functools import partial
 
-from watchdog.events import (
-    DirCreatedEvent,
-    DirDeletedEvent,
-    DirModifiedEvent,
-    DirMovedEvent,
-    FileCreatedEvent,
-    FileDeletedEvent,
-    FileModifiedEvent,
-    FileMovedEvent,
-)
+from watchdog.utils.dirsnapshot import DirectorySnapshot, DirectorySnapshotDiff
 from watchdog.observers.api import (
-    DEFAULT_EMITTER_TIMEOUT,
-    DEFAULT_OBSERVER_TIMEOUT,
-    BaseObserver,
     EventEmitter,
+    BaseObserver,
+    DEFAULT_OBSERVER_TIMEOUT,
+    DEFAULT_EMITTER_TIMEOUT,
 )
-from watchdog.utils.sqldirsnapshot import SqliteDirectorySnapshot as DirectorySnapshot
-from watchdog.utils.dirsnapshot import DirectorySnapshotDiff
+
+from watchdog.events import (
+    DirMovedEvent,
+    DirDeletedEvent,
+    DirCreatedEvent,
+    DirModifiedEvent,
+    FileMovedEvent,
+    FileDeletedEvent,
+    FileCreatedEvent,
+    FileModifiedEvent,
+)
 
 
 class PollingEmitter(EventEmitter):
