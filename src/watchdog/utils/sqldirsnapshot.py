@@ -7,7 +7,7 @@ from watchdog.utils.dirsnapshot import DirectorySnapshot
 
 class SqliteDirectorySnapshot(DirectorySnapshot):
     def __init__(self, path, recursive=True, stat=os.stat, listdir=os.scandir):
-        self.conn = sqlite3.connect(":memory:")
+        self.conn = sqlite3.connect("watchdog.db")
         self.create_tables()
 
         super().__init__(path, recursive, stat, listdir)
