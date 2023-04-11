@@ -54,7 +54,7 @@ from watchdog.observers.api import (
     BaseObserver,
     EventEmitter,
 )
-from watchdog.utils.sqldirsnapshot import Sqlite3DirectorySnapshot as DirectorySnapshot
+from watchdog.utils.sqldirsnapshot import SqliteDirectorySnapshot as DirectorySnapshot
 from watchdog.utils.dirsnapshot import DirectorySnapshotDiff
 
 
